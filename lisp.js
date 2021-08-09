@@ -7,13 +7,11 @@ fs = require('fs');
 const tokenize = (text) =>
   text.replace(/^[\s]*\;.*\n?/gm, '')
     .split('"')
-    .map((val, i) => {
-      if (i % 2 === 0) // if we are not in a string
-        return val.replace(/\(/g, ' ( ')
-          .replace(/\)/g, ' ) ');
-      else // we are in a string
-        return val.replace(/ /g, '\\whitespace\\');
-    })
+    .map((val, i) => i % 2 === 0 
+      ? val.replace(/\(/g, ' ( ')
+           .replace(/\)/g, ' ) ')
+      : val.replace(/ /g, '\\whitespace\\')
+    )
     .join('"')
     .trim() // get rid of trailing whitespace
     .split(/\s+/) // split on whitespace
