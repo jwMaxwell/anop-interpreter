@@ -1,0 +1,11 @@
+{
+  "name": "lisp",
+  "version": "1.0.0",
+  "description": "A simple lisp type interpreter",
+  "main": "lisp.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Joshua Maxwell",
+  "license": "ISC"
+}
