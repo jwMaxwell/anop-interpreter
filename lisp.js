@@ -5,17 +5,17 @@ fs = require('fs');
  * @returns Tokens to organize the AST
  */
 const tokenize = (text) =>
-  text.replace(/^[\s]*\;.*\n?/gm, '')
+  text.replaceAll(/^[\s]*\;.*\n?/gm, '')
     .split('"')
     .map((val, i) => i % 2 === 0 
       ? val.replace(/\(/g, ' ( ')
            .replace(/\)/g, ' ) ')
-      : val.replace(/ /g, '\\whitespace\\')
+      : val.replace(/ /g, '-=whitespace=-')
     )
     .join('"')
     .trim() // get rid of trailing whitespace
     .split(/\s+/) // split on whitespace
-    .map(val => val.replaceAll('\\whitespace\\', " "));
+    .map(val => val.replaceAll('-=whitespace=-', " "));
 
 const makeNode = (token) => {
   if (!isNaN(parseFloat(token))) // if its a number
@@ -28,25 +28,20 @@ const makeNode = (token) => {
     return {type: "id", value: token};
 }
 
-const parse = (tokens, ast) => {
-  if (ast === undefined) { 
-    return parse(tokens, []);
+const parse = (tokens, ast=[]) => {
+  const curTok = tokens.shift();  
+  if (curTok === undefined) {
+    return ast.pop(); // ends with extra array
   }
-  else {
-    const curTok = tokens.shift();  
-    if (curTok === undefined) {
-      return ast.pop(); // ends with extra array
-    }
-    else if (curTok === '(') {
-      ast.push(parse(tokens, []));
-      return parse(tokens, ast); // new subtree
-    }
-    else if (curTok === ')') {
-      return ast; // end subtree
-    }
-    else { // must be and id or value
-      return parse(tokens, ast.concat(makeNode(curTok)));
-    }
+  else if (curTok === '(') {
+    ast.push(parse(tokens, []));
+    return parse(tokens, ast); // new subtree
+  }
+  else if (curTok === ')') {
+    return ast; // end subtree
+  }
+  else { // must be and id or value
+    return parse(tokens, ast.concat(makeNode(curTok)));
   }
 }
 
@@ -61,7 +56,10 @@ const controlFlow = {
 }
 
 const identify = (id, ctx) => {
-  if (id in ctx) {
+  if (id in controlFlow) {
+    // TODO:
+  }
+  else if (id in ctx) {
     return ctx[id];
   }
   else if (ctx.parent !== undefined) 
@@ -70,40 +68,37 @@ const identify = (id, ctx) => {
   console.error(`Identifier "${id}" unknown`);
 }
 
-const interpret = (input, ctx) => {
-  if (ctx === undefined)
-    return interpret(input, {scope: {}, parent: funcs});
-  else {
-    if (input instanceof Array) {
-      input = input.map(t => interpret(t, {scope: {}, parent: ctx}));
-      if (input[0] instanceof Function && input[0].name === 'op') {
-        return input[0].apply(null, [input.slice(1)]);
-      }
-      else if (input[0] instanceof Function) {
-        return input[0].apply(null, input.slice(1));
-      }
-      else
-       return input;
+const interpret = (input, ctx = {scope: {}, parent: funcs}) => {
+  if (ctx === undefined) interpret(input, {scope: {}, parent: funcs});
+  if (Array.isArray(input)) {
+    input = input.map(t => interpret(t, {scope: {}, parent: ctx}));
+    if (input[0] instanceof Function && input[0].name === 'op') {
+      return input[0].apply(null, [input.slice(1)]);
     }
-    else if (input.type === 'id')
-      return identify(input.value, ctx);
-    else if (input.type === 'operator'){
-      switch (input.value) {
-        case '+': return op = x => x.reduce((a, b) => a + b);
-        case '-': return op = x => x.reduce((a, b) => a - b);
-        case '*': return op = x => x.reduce((a, b) => a * b);
-        case '/': return op = x => x.reduce((a, b) => a / b);
-        case '%': return op = x => x.reduce((a, b) => a % b);
-        case '^': return op = x => x.reduce((a, b) => a ** b);
-        case '<': return op = x => x.every((val, i) => val === x.sort()[i]);
-        case '>': return op = x => x.every((val, i) => val === x.sort().reverse()[i]);
-        case '&': return op = x => x.every(t => t);
-        case '|': return op = x => x.some(t => t);
-      }
+    else if (input[0] instanceof Function) {
+      return input[0].apply(null, input.slice(1));
     }
-    else if (input.type === 'number' || input.type === 'string')
-      return input.value;    
+    else
+      return input;
   }
+  else if (input.type === 'id')
+    return identify(input.value, ctx);
+  else if (input.type === 'operator'){
+    switch (input.value) {
+      case '+': return op = x => x.reduce((a, b) => a + b);
+      case '-': return op = x => x.reduce((a, b) => a - b);
+      case '*': return op = x => x.reduce((a, b) => a * b);
+      case '/': return op = x => x.reduce((a, b) => a / b);
+      case '%': return op = x => x.reduce((a, b) => a % b);
+      case '^': return op = x => x.reduce((a, b) => a ** b);
+      case '<': return op = x => x.every((val, i) => val === x.sort()[i]);
+      case '>': return op = x => x.every((val, i) => val === x.sort().reverse()[i]);
+      case '&': return op = x => x.every(t => t);
+      case '|': return op = x => x.some(t => t);
+    }
+  }
+  else if (input.type === 'number' || input.type === 'string')
+    return input.value;    
 }
 
 const main = () => {
