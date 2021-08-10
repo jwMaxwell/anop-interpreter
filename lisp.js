@@ -1,3 +1,4 @@
+const prompt = require('prompt-sync')();
 fs = require('fs');
 
 /**
@@ -49,17 +50,34 @@ const funcs = {
   print: x => console.log(x),
   head: x => x[0],
   tail: x => x.slice(1),
+  range: x => [...Array(x[1] - x[0]).keys()].map(t => t + x[0])
 };
 
 const controlFlow = {
-  //const: ()
+  if: (input, ctx) =>
+    interpret(input[1], ctx)
+    ? interpret(input[2], ctx)
+    : interpret(input[3], ctx),
+
+  var: (input, ctx) => {
+    ctx.parent[input[1].value] = interpret(input[2], ctx);
+    return interpret(input[2], ctx);
+  },
+
+  expr: (input, ctx) => {
+    return (x) => {
+      x = Object.values(Object(x)); //for some reason x is passed an object array??
+      const exprCtx = ctx;
+      for (let i = 0; i < input[1].length; ++i)
+        exprCtx[input[1][i].value] = x[i];
+
+      return interpret([input[2]], exprCtx);
+    }
+  }
 }
 
 const identify = (id, ctx) => {
-  if (id in controlFlow) {
-    // TODO:
-  }
-  else if (id in ctx) {
+  if (id in ctx) {
     return ctx[id];
   }
   else if (ctx.parent !== undefined) 
@@ -68,18 +86,22 @@ const identify = (id, ctx) => {
   console.error(`Identifier "${id}" unknown`);
 }
 
-const interpret = (input, ctx = {scope: {}, parent: funcs}) => {
-  if (ctx === undefined) interpret(input, {scope: {}, parent: funcs});
+const interpret = (input=[], ctx = {scope: {}, parent: funcs}) => {
   if (Array.isArray(input)) {
-    input = input.map(t => interpret(t, {scope: {}, parent: ctx}));
-    if (input[0] instanceof Function && input[0].name === 'op') {
-      return input[0].apply(null, [input.slice(1)]);
+    if (input.length > 0 && input[0].value in controlFlow) {
+      return controlFlow[input[0].value](input, ctx);
     }
-    else if (input[0] instanceof Function) {
-      return input[0].apply(null, input.slice(1));
+    else {
+      input = input.map(t => interpret(t, {scope: {}, parent: ctx}));
+      if (input[0] instanceof Function && input[0].name === 'op') {
+        return input[0].apply(null, [input.slice(1)]);
+      }
+      else if (input[0] instanceof Function) {
+        return input[0].apply(null, input.slice(1));
+      }
+      else
+        return input;
     }
-    else
-      return input;
   }
   else if (input.type === 'id')
     return identify(input.value, ctx);
@@ -102,11 +124,13 @@ const interpret = (input, ctx = {scope: {}, parent: funcs}) => {
 }
 
 const main = () => {
-  const file = process.argv.length === 4 ? process.argv[3] : process.argv[2];
-  const flags = process.argv.length === 4 ? process.argv[2] : undefined;
+  const flags = process.argv[2][0] === '-' ? process.argv[2] : undefined;
+  let file;
+  if (flags === undefined) file = process.argv[2];
 
-  const input =
-    fs.readFileSync(file, { encoding: 'utf8', flag: 'r' });
+  const input = flags.includes('c') 
+    ? prompt('anop > ')
+    : fs.readFileSync(file, { encoding: 'utf8', flag: 'r' });
   
   const tokens = tokenize(input);
   const ast = parse(tokens, []);
@@ -116,7 +140,7 @@ const main = () => {
     console.log(input);
     
     console.log('Tokens:');
-    console.log(tokens);
+    console.log(tokenize(input));
 
     console.log('AST:');
     console.log(ast);
