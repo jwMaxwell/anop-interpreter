@@ -1,3 +1,5 @@
+const { exit } = require('process');
+
 const prompt = require('prompt-sync')();
 fs = require('fs');
 
@@ -31,19 +33,17 @@ const makeNode = (token) => {
 
 const parse = (tokens, ast=[]) => {
   const curTok = tokens.shift();  
-  if (curTok === undefined) {
+  if (curTok === undefined) 
     return ast.pop(); // ends with extra array
-  }
   else if (curTok === '(') {
     ast.push(parse(tokens, []));
     return parse(tokens, ast); // new subtree
   }
-  else if (curTok === ')') {
+  else if (curTok === ')')
     return ast; // end subtree
-  }
-  else { // must be and id or value
+  else // must be and id or value
     return parse(tokens, ast.concat(makeNode(curTok)));
-  }
+
 }
 
 const funcs = {
@@ -77,9 +77,10 @@ const controlFlow = {
 }
 
 const identify = (id, ctx) => {
-  if (id in ctx) {
+  if (id in ctx)
     return ctx[id];
-  }
+  else if (id === 'exit')
+    exit();
   else if (ctx.parent !== undefined) 
     return identify(id, ctx.parent);
   
@@ -88,17 +89,14 @@ const identify = (id, ctx) => {
 
 const interpret = (input=[], ctx = {scope: {}, parent: funcs}) => {
   if (Array.isArray(input)) {
-    if (input.length > 0 && input[0].value in controlFlow) {
+    if (input.length > 0 && input[0].value in controlFlow) 
       return controlFlow[input[0].value](input, ctx);
-    }
     else {
       input = input.map(t => interpret(t, {scope: {}, parent: ctx}));
-      if (input[0] instanceof Function && input[0].name === 'op') {
+      if (input[0] instanceof Function && input[0].name === 'op')
         return input[0].apply(null, [input.slice(1)]);
-      }
-      else if (input[0] instanceof Function) {
+      else if (input[0] instanceof Function)
         return input[0].apply(null, input.slice(1));
-      }
       else
         return input;
     }
@@ -121,6 +119,23 @@ const interpret = (input=[], ctx = {scope: {}, parent: funcs}) => {
   }
   else if (input.type === 'number' || input.type === 'string')
     return input.value;    
+}
+
+const balancedParens = (tokens) => {
+  const stack = [];
+  tokens.map(t => {
+    if (t === '(') stack.push(t);
+    else if (t === ')') stack.pop();
+  })
+
+  return stack.length === 0 ? true : false;
+}
+
+const balancedQuotes = (tokens) => tokens.map()
+
+const errorDetector = (tokens) => {
+  if (!balancedParens) console.log("Unbalanced Parens");
+  
 }
 
 const main = () => {
@@ -146,6 +161,8 @@ const main = () => {
     console.log(ast);
   }
   interpret(ast);
+
+  if (flags.includes('c')) main();
 }
 
 main();
