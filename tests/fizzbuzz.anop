@@ -1,0 +1,25 @@
+(
+  (import "tests/test1.anop")
+  (var fizzbuzz (expr (x) 
+  (
+    if (& (% head(x) 3) (% head(x) 5)) 
+      "fizzbuzz" 
+      x
+    )
+  ))
+ 
+  (var loop (expr (x) 
+  (   
+    (var y (head (x)))
+    (var z (tail (x)))
+    (if x
+      (
+        (print (fizzbuzz (y))) 
+        (loop tail(x))
+      ) 
+      (print (fizzbuzz (y)))
+    )
+  )))
+
+  (loop (range (1 100)))
+)

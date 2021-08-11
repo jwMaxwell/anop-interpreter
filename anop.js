@@ -25,7 +25,7 @@ const makeNode = (token) => {
     return {type: "number", value: parseFloat(token)};
   else if (token[0] === '"') // if its a string
     return {type: "string", value: token.slice(1, token.length - 1)};
-  else if ('+-*/%^<>&|'.split('').includes(token))
+  else if ('+-*/%^<>&|~'.split('').includes(token))
     return {type: "operator", value: token};
   else
     return {type: "id", value: token};
@@ -43,14 +43,14 @@ const parse = (tokens, ast=[]) => {
     return ast; // end subtree
   else // must be and id or value
     return parse(tokens, ast.concat(makeNode(curTok)));
-
 }
 
 const funcs = {
   print: x => console.log(x),
   head: x => x[0],
   tail: x => x.slice(1),
-  range: x => [...Array(x[1] - x[0]).keys()].map(t => t + x[0])
+  range: x => [...Array(x[1] - x[0]).keys()].map(t => t + x[0]),
+  push: x => x[1].push(x[0]),
 };
 
 const controlFlow = {
@@ -73,6 +73,12 @@ const controlFlow = {
 
       return interpret([input[2]], exprCtx);
     }
+  },
+
+  import: (input, ctx) => {
+    input.slice(2).unshift(parse(tokenize(
+      fs.readFileSync(`${input[1].value}`, { encoding: 'utf8', flag: 'r' }))));
+    return interpret(input, ctx);
   }
 }
 
@@ -115,42 +121,28 @@ const interpret = (input=[], ctx = {scope: {}, parent: funcs}) => {
       case '>': return op = x => x.every((val, i) => val === x.sort().reverse()[i]);
       case '&': return op = x => x.every(t => t);
       case '|': return op = x => x.some(t => t);
+      case '~': return op = x => x.map(t => t ? false : true);
     }
   }
   else if (input.type === 'number' || input.type === 'string')
     return input.value;    
 }
 
-const balancedParens = (tokens) => {
-  const stack = [];
-  tokens.map(t => {
-    if (t === '(') stack.push(t);
-    else if (t === ')') stack.pop();
-  })
-
-  return stack.length === 0 ? true : false;
-}
-
-const balancedQuotes = (tokens) => tokens.map()
-
-const errorDetector = (tokens) => {
-  if (!balancedParens) console.log("Unbalanced Parens");
-  
-}
-
+var input;
 const main = () => {
-  const flags = process.argv[2][0] === '-' ? process.argv[2] : undefined;
-  let file;
-  if (flags === undefined) file = process.argv[2];
+  const flags = process.argv[2][0] === '-' ? process.argv[2] : '';
+  let file = flags === '' ? process.argv[2] : process.argv[3];
 
-  const input = flags.includes('c') 
+  input = flags.includes('c') 
     ? prompt('anop > ')
     : fs.readFileSync(file, { encoding: 'utf8', flag: 'r' });
   
+  if( input === null) exit();
+
   const tokens = tokenize(input);
   const ast = parse(tokens, []);
 
-  if (flags !== undefined && flags.includes('d')) { // debug information
+  if (flags.includes('d')) { // debug information
     console.log('Input:');
     console.log(input);
     
