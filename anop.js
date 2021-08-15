@@ -8,24 +8,24 @@ fs = require('fs');
  * @returns Tokens to organize the AST
  */
 const tokenize = (text) =>
-  text.replaceAll(/^[\s]*\;.*\n?/gm, '')
+  `( ${text} )`.replaceAll(/^[\s]*\;.*\n?/gm, '')
     .split('"')
     .map((val, i) => i % 2 === 0 
       ? val.replace(/\(/g, ' ( ')
            .replace(/\)/g, ' ) ')
-      : val.replace(/ /g, '-=whitespace=-')
+      : val.replace(/ /g, '\\whitespace\\')
     )
     .join('"')
     .trim() // get rid of trailing whitespace
     .split(/\s+/) // split on whitespace
-    .map(val => val.replaceAll('-=whitespace=-', " "));
+    .map(val => val.replaceAll('\\whitespace\\', " "));
 
 const makeNode = (token) => {
   if (!isNaN(parseFloat(token))) // if its a number
     return {type: "number", value: parseFloat(token)};
   else if (token[0] === '"') // if its a string
     return {type: "string", value: token.slice(1, token.length - 1)};
-  else if ('+-*/%^<>&|~'.split('').includes(token))
+  else if ('+-*/%^<>&|~='.split('').includes(token))
     return {type: "operator", value: token};
   else
     return {type: "id", value: token};
@@ -47,10 +47,16 @@ const parse = (tokens, ast=[]) => {
 
 const funcs = {
   print: x => console.log(x),
+  clear: _ => console.clear(),
+  read: _ => prompt(''),
   head: x => x[0],
   tail: x => x.slice(1),
   range: x => [...Array(x[1] - x[0]).keys()].map(t => t + x[0]),
   push: x => x[1].push(x[0]),
+  copy: x => x,
+  pop: x => x.pop(),
+  rm: x => x.slice(0, -1),
+  //map: x => console.log(x)//x[1].map(t => x[1](t))
 };
 
 const controlFlow = {
@@ -76,10 +82,11 @@ const controlFlow = {
   },
 
   import: (input, ctx) => {
-    input.slice(2).unshift(parse(tokenize(
-      fs.readFileSync(`${input[1].value}`, { encoding: 'utf8', flag: 'r' }))));
-    return interpret(input, ctx);
-  }
+    input.push(parse(tokenize(
+      fs.readFileSync(`${input[1].value}`, {encoding: 'utf8', flag: 'r' }))));
+    return interpret(input[2], ctx);
+  },
+
 }
 
 const identify = (id, ctx) => {
@@ -122,18 +129,18 @@ const interpret = (input=[], ctx = {scope: {}, parent: funcs}) => {
       case '&': return op = x => x.every(t => t);
       case '|': return op = x => x.some(t => t);
       case '~': return op = x => x.map(t => t ? false : true);
+      case '=': return op = x => x.every((val, i, arr) => val === arr[0]);
     }
   }
   else if (input.type === 'number' || input.type === 'string')
     return input.value;    
 }
 
-var input;
 const main = () => {
   const flags = process.argv[2][0] === '-' ? process.argv[2] : '';
   let file = flags === '' ? process.argv[2] : process.argv[3];
 
-  input = flags.includes('c') 
+  const input = flags.includes('c') 
     ? prompt('anop > ')
     : fs.readFileSync(file, { encoding: 'utf8', flag: 'r' });
   
