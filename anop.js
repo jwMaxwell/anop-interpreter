@@ -56,6 +56,7 @@ const funcs = {
   copy: (x) => x,
   pop: (x) => x.pop(),
   rm: (x) => x.slice(0, -1),
+  eval: (x) => interpret(parse(tokenize(x)));
   //map: x => console.log(x)//x[1].map(t => x[1](t))
 };
 
