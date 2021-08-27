@@ -3,6 +3,23 @@ const { exit } = require("process");
 const prompt = require("prompt-sync")();
 fs = require("fs");
 
+const colorize = {
+  reset: x => "\x1b[0m" + x,
+  bright: x =>  "\x1b[1m" + x + "\x1b[0m",
+  dim: x =>  "\x1b[2m" + x + "\x1b[0m",
+  underline: x =>  "\x1b[4m" + x + "\x1b[0m",
+  blink: x =>  "\x1b[5m" + x + "\x1b[0m",
+  fgBlack: x =>  "\x1b[30m" + x + "\x1b[0m",
+  fgRed: x =>  "\x1b[31m" + x + "\x1b[0m",
+  fgGreen: x =>  "\x1b[32m" + x + "\x1b[0m",
+  fgYellow: x =>  "\x1b[33m" + x + "\x1b[0m",
+  fgBlue: x =>  "\x1b[34m" + x + "\x1b[0m",
+  fgMagenta: x =>  "\x1b[35m" + x + "\x1b[0m",
+  fgCyan: x =>  "\x1b[36m" + x + "\x1b[0m",
+  fgWhite: x =>  "\x1b[37m" + x + "\x1b[0m",
+  error: x => "\x1b[1m\x1b[31m" + x + "\x1b[0m"
+}
+
 /**
  * @param {String} text The users input
  * @returns Tokens to organize the AST
@@ -56,9 +73,9 @@ const funcs = {
   copy: (x) => x,
   pop: (x) => x.pop(),
   rm: (x) => x.slice(0, -1),
-  eval: (x) => interpret(parse(tokenize(x)));
-  //map: x => console.log(x)//x[1].map(t => x[1](t))
-};
+  eval: (x) => interpret(parse(tokenize(x))),
+  inject: (x) => eval(x)
+}
 
 const operators = {
   "+": (op = (x) => x.reduce((a, b) => a + b)),
@@ -69,8 +86,10 @@ const operators = {
   "^": (op = (x) => x.reduce((a, b) => a ** b)),
   "|": (op = (x) => x.some((t) => t)),
   "&": (op = (x) => x.every((t) => t)),
-  ">": (op = (x) => x.every((val, i) => val === x.sort().reverse()[i])),
-  "<": (op = (x) => x.every((val, i) => val === x.sort()[i])),
+  ">": (op = (x) => x.every((val, i) => val === x.sort().reverse()[i])), //TODO
+  "<": (op = (x) => x.every((val, i) => val === x.sort()[i])), //TODO
+  ">=": (op = (x) => x.every((val, i) => val === x.sort().reverse()[i])),
+  "<=": (op = (x) => x.every((val, i) => val === x.sort()[i])),
   "=": (op = (x) => x.every((val, i, arr) => val === arr[0])),
   "~": (op = (x) => !x.every((val, i, arr) => val === arr[0])),
 };
@@ -114,7 +133,7 @@ const identify = (id, ctx) => {
   else if (id === "exit") exit();
   else if (ctx.parent !== undefined) return identify(id, ctx.parent);
 
-  console.error(`Identifier "${id}" unknown`);
+  console.error(colorize.error(`identifier "${id}" unknown`));
 };
 
 const interpret = (input = [], ctx = { scope: {}, parent: funcs }) => {
