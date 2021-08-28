@@ -4,21 +4,21 @@ const prompt = require("prompt-sync")();
 fs = require("fs");
 
 const colorize = {
-  reset: x => "\x1b[0m" + x,
-  bright: x =>  "\x1b[1m" + x + "\x1b[0m",
-  dim: x =>  "\x1b[2m" + x + "\x1b[0m",
-  underline: x =>  "\x1b[4m" + x + "\x1b[0m",
-  blink: x =>  "\x1b[5m" + x + "\x1b[0m",
-  fgBlack: x =>  "\x1b[30m" + x + "\x1b[0m",
-  fgRed: x =>  "\x1b[31m" + x + "\x1b[0m",
-  fgGreen: x =>  "\x1b[32m" + x + "\x1b[0m",
-  fgYellow: x =>  "\x1b[33m" + x + "\x1b[0m",
-  fgBlue: x =>  "\x1b[34m" + x + "\x1b[0m",
-  fgMagenta: x =>  "\x1b[35m" + x + "\x1b[0m",
-  fgCyan: x =>  "\x1b[36m" + x + "\x1b[0m",
-  fgWhite: x =>  "\x1b[37m" + x + "\x1b[0m",
-  error: x => "\x1b[1m\x1b[31m" + x + "\x1b[0m"
-}
+  reset: (x) => "\x1b[0m" + x,
+  bright: (x) => "\x1b[1m" + x + "\x1b[0m",
+  dim: (x) => "\x1b[2m" + x + "\x1b[0m",
+  underline: (x) => "\x1b[4m" + x + "\x1b[0m",
+  blink: (x) => "\x1b[5m" + x + "\x1b[0m",
+  fgBlack: (x) => "\x1b[30m" + x + "\x1b[0m",
+  fgRed: (x) => "\x1b[31m" + x + "\x1b[0m",
+  fgGreen: (x) => "\x1b[32m" + x + "\x1b[0m",
+  fgYellow: (x) => "\x1b[33m" + x + "\x1b[0m",
+  fgBlue: (x) => "\x1b[34m" + x + "\x1b[0m",
+  fgMagenta: (x) => "\x1b[35m" + x + "\x1b[0m",
+  fgCyan: (x) => "\x1b[36m" + x + "\x1b[0m",
+  fgWhite: (x) => "\x1b[37m" + x + "\x1b[0m",
+  error: (x) => "\x1b[1m\x1b[31m" + x + "\x1b[0m",
+};
 
 /**
  * @param {String} text The users input
@@ -74,8 +74,8 @@ const funcs = {
   pop: (x) => x.pop(),
   rm: (x) => x.slice(0, -1),
   eval: (x) => interpret(parse(tokenize(x))),
-  inject: (x) => eval(x)
-}
+  inject: (x) => eval(x),
+};
 
 const operators = {
   "+": (op = (x) => x.reduce((a, b) => a + b)),
@@ -86,10 +86,15 @@ const operators = {
   "^": (op = (x) => x.reduce((a, b) => a ** b)),
   "|": (op = (x) => x.some((t) => t)),
   "&": (op = (x) => x.every((t) => t)),
-  ">": (op = (x) => x.every((val, i) => val === x.sort().reverse()[i])), //TODO
-  "<": (op = (x) => x.every((val, i) => val === x.sort()[i])), //TODO
-  ">=": (op = (x) => x.every((val, i) => val === x.sort().reverse()[i])),
-  "<=": (op = (x) => x.every((val, i) => val === x.sort()[i])),
+  ">": (op = (x) =>
+    x.every((val, i) => val === x.sort((a, b) => a - b).reverse()[i]) &&
+    x.filter((val, i) => x.indexOf(val) !== i)),
+  "<": (op = (x) =>
+    x.every((val, i) => val === x.sort((a, b) => a - b)[i]) &&
+    x.filter((val, i) => x.indexOf(val) !== i)),
+  ">=": (op = (x) =>
+    x.every((val, i) => val === x.sort((a, b) => a - b).reverse()[i])),
+  "<=": (op = (x) => x.every((val, i) => val === x.sort((a, b) => a - b)[i])),
   "=": (op = (x) => x.every((val, i, arr) => val === arr[0])),
   "~": (op = (x) => !x.every((val, i, arr) => val === arr[0])),
 };
@@ -134,6 +139,7 @@ const identify = (id, ctx) => {
   else if (ctx.parent !== undefined) return identify(id, ctx.parent);
 
   console.error(colorize.error(`identifier "${id}" unknown`));
+  exit();
 };
 
 const interpret = (input = [], ctx = { scope: {}, parent: funcs }) => {
@@ -155,31 +161,47 @@ const interpret = (input = [], ctx = { scope: {}, parent: funcs }) => {
     return input.value;
 };
 
+const checkParens = (input) => {
+  const temp = input.split("");
+  const result = [];
+  for (let n of temp) {
+    if (n === "(") result.push(n);
+    else if (n === ")" && result.length) result.pop();
+    else if (n === ")") return false;
+  }
+  return result.length ? false : true;
+};
+
+const debug = (input) => {
+  console.log("Input:");
+  console.log(input);
+
+  console.log("Tokens:");
+  console.log(tokenize(input));
+
+  console.log("AST:");
+  console.log(parse(tokenize(input)));
+};
+
 const main = () => {
+  // gather the data
   const flags = process.argv[2][0] === "-" ? process.argv[2] : "";
   let file = flags === "" ? process.argv[2] : process.argv[3];
-
   const input = flags.includes("c")
     ? prompt("anop > ")
     : fs.readFileSync(file, { encoding: "utf8", flag: "r" });
 
+  // operate on the data
   if (input === null) exit();
-
-  const tokens = tokenize(input);
-  const ast = parse(tokens, []);
-
-  if (flags.includes("d")) {
-    // debug information
-    console.log("Input:");
-    console.log(input);
-
-    console.log("Tokens:");
-    console.log(tokenize(input));
-
-    console.log("AST:");
-    console.log(ast);
+  if (!checkParens(input)) {
+    console.log(colorize.error("Unbalanced Parens"));
+    exit();
   }
-  interpret(ast);
+  if (flags.includes("d"))
+    // debug information
+    debug(input);
+
+  interpret(parse(tokenize(input)));
 
   if (flags.includes("c")) main();
 };
