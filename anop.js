@@ -30,6 +30,7 @@ const colorize = {
  */
 const tokenize = (text) =>
   `( ${text} )`
+    // TODO: you should absolutely have tests for this function. Something that says "tokenize(input) had better always equal X"
     // TODO: I suspect you could do 95% of this function with a single regex
     // TODO: I think a string should be a single token, you could do that with a regex
     // TODO: the backslash before the ; is not needed
@@ -191,6 +192,7 @@ const debug = (input) => {
   console.log(parse(tokenize(input)));
 };
 
+// TODO: move this to a different file. Separate your logic from your I/O.
 const main = () => {
   // gather the data
   const flags = process.argv[2][0] === "-" ? process.argv[2] : "";
@@ -214,4 +216,8 @@ const main = () => {
   if (flags.includes("c")) main();
 };
 
-main();
+// main();
+
+module.exports.tokenize = tokenize;
+module.exports.parse = parse;
+module.exports.interpret = interpret;
