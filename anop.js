@@ -46,26 +46,25 @@ const tokenize = (text) =>
     .map((val) => val.replaceAll("\\whitespace\\", " "));
 
 const operators = {
-  // TODO: what is `op = ` doing for you in all of these? op isn't defined?
-  "+": (op = (x) => x.reduce((a, b) => a + b)),
-  "-": (op = (x) => x.reduce((a, b) => a - b)),
-  "*": (op = (x) => x.reduce((a, b) => a * b)),
-  "/": (op = (x) => x.reduce((a, b) => a / b)),
-  "%": (op = (x) => x.reduce((a, b) => a % b)),
-  "^": (op = (x) => x.reduce((a, b) => a ** b)),
-  "|": (op = (x) => x.some((t) => t)),
-  "&": (op = (x) => x.every((t) => t)),
-  ">": (op = (x) =>
+  "+": (x) => x.reduce((a, b) => a + b),
+  "-": (x) => x.reduce((a, b) => a - b),
+  "*": (x) => x.reduce((a, b) => a * b),
+  "/": (x) => x.reduce((a, b) => a / b),
+  "%": (x) => x.reduce((a, b) => a % b),
+  "^": (x) => x.reduce((a, b) => a ** b),
+  "|": (x) => x.some((t) => t),
+  "&": (x) => x.every((t) => t),
+  ">": (x) =>
     x.every((val, i) => val === x.sort((a, b) => a - b).reverse()[i]) &&
-    x.filter((val, i) => x.indexOf(val) !== i)),
-  "<": (op = (x) =>
+    x.filter((val, i) => x.indexOf(val) !== i),
+  "<": (x) =>
     x.every((val, i) => val === x.sort((a, b) => a - b)[i]) &&
-    x.filter((val, i) => x.indexOf(val) !== i)),
-  ">=": (op = (x) =>
-    x.every((val, i) => val === x.sort((a, b) => a - b).reverse()[i])),
-  "<=": (op = (x) => x.every((val, i) => val === x.sort((a, b) => a - b)[i])),
-  "=": (op = (x) => x.every((val, i, arr) => val === arr[0])),
-  "~": (op = (x) => !x.every((val, i, arr) => val === arr[0])),
+    x.filter((val, i) => x.indexOf(val) !== i),
+  ">=": (x) =>
+    x.every((val, i) => val === x.sort((a, b) => a - b).reverse()[i]),
+  "<=": (x) => x.every((val, i) => val === x.sort((a, b) => a - b)[i]),
+  "=": (x) => x.every((val, i, arr) => val === arr[0]),
+  "~": (x) => !x.every((val, i, arr) => val === arr[0]),
 };
 
 const makeNode = (token) => {
@@ -73,10 +72,8 @@ const makeNode = (token) => {
     // if its a number
     return { type: "number", value: parseFloat(token) };
   else if (token[0] === '"')
-    // TODO: I don't think a quote should be a token, the whole string should be a token.
     // if its a string
     return { type: "string", value: token.slice(1, token.length - 1) };
-  // TODO: operators was used before it was defined.
   else if (token in operators) return { type: "operator", value: token };
   else return { type: "id", value: token };
 };
@@ -92,7 +89,7 @@ const parse = (tokens, ast = []) => {
   // end subtree
   // must be and id or value
   // TODO: what if it's not an id or value?
-  else return parse(tokens, ast.concat(makeNode(curTok))); // TODO: concat is so 2019. Use array spreading :)
+  else return parse(tokens, [...ast, makeNode(curTok)]); // TODO: concat is so 2019. Use array spreading :)
 };
 
 const funcs = {
@@ -156,7 +153,10 @@ const interpret = (input = [], ctx = { scope: {}, parent: funcs }) => {
       return controlFlow[input[0].value](input, ctx);
     else {
       input = input.map((t) => interpret(t, { scope: {}, parent: ctx }));
-      if (input[0] instanceof Function && input[0].name === "op")
+      if (
+        input[0] instanceof Function &&
+        Object.values(operators).includes(input[0])
+      )
         return input[0].apply(null, [input.slice(1)]);
       else if (input[0] instanceof Function)
         return input[0].apply(null, input.slice(1));
