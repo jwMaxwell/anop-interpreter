@@ -10,6 +10,5 @@ module.exports = {
     "quote-props": ["warn", "as-needed"],
     "arrow-body-style": ["warn", "as-needed"],
     "object-shorthand": "warn",
-    "no-use-before-define": "warn",
   },
 };
