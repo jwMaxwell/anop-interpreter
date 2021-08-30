@@ -1,6 +1,6 @@
 /* globals expect */
 
-const { tokenize, parse, interpret } = require("./anop.js");
+const { anop } = require("./anop.js");
 
 const captureLogs = (funcThatLogs) => {
   const orig = console.log;
@@ -11,8 +11,7 @@ const captureLogs = (funcThatLogs) => {
   return logs;
 };
 
-const getOutput = (anopStr) =>
-  captureLogs(() => interpret(parse(tokenize(anopStr))))[0];
+const getOutput = (anopStr) => captureLogs(() => anop(anopStr))[0];
 
 test('prints "Hello, World!" inside an array', () => {
   expect(getOutput('(print ("Hello, world!"))')).toEqual(["Hello, world!"]);

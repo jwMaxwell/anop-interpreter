@@ -1,8 +1,5 @@
-// TODO: can you use import instead? You'd need to add "type": "module" to your package.json, and be using a recent version of Node
 const { exit } = require("process");
-
 const prompt = require("prompt-sync")();
-
 const fs = require("fs");
 
 // TODO: Does this need to be here? This seems like something specific to a certain utility function. This should go into a separate file and that file should export a function that lets you log things in different colors.
@@ -221,3 +218,4 @@ const main = () => {
 module.exports.tokenize = tokenize;
 module.exports.parse = parse;
 module.exports.interpret = interpret;
+module.exports.anop = (str) => interpret(parse(tokenize(str)));
