@@ -1,8 +1,12 @@
+// TODO: can you use import instead? You'd need to add "type": "module" to your package.json, and be using a recent version of Node
 const { exit } = require("process");
 
 const prompt = require("prompt-sync")();
-fs = require("fs");
 
+const fs = require("fs");
+
+// TODO: Does this need to be here? This seems like something specific to a certain utility function. This should go into a separate file and that file should export a function that lets you log things in different colors.
+// e.g. `export const print = (color, msg) => {...}`
 const colorize = {
   reset: (x) => "\x1b[0m" + x,
   bright: (x) => "\x1b[1m" + x + "\x1b[0m",
@@ -26,7 +30,10 @@ const colorize = {
  */
 const tokenize = (text) =>
   `( ${text} )`
-    .replaceAll(/^[\s]*\;.*\n?/gm, "")
+    // TODO: I suspect you could do 95% of this function with a single regex
+    // TODO: I think a string should be a single token, you could do that with a regex
+    // TODO: the backslash before the ; is not needed
+    .replaceAll(/^[\s]*;.*\n?/gm, "")
     .split('"')
     .map((val, i) =>
       i % 2 === 0
@@ -38,46 +45,8 @@ const tokenize = (text) =>
     .split(/\s+/) // split on whitespace
     .map((val) => val.replaceAll("\\whitespace\\", " "));
 
-const makeNode = (token) => {
-  if (!isNaN(parseFloat(token)))
-    // if its a number
-    return { type: "number", value: parseFloat(token) };
-  else if (token[0] === '"')
-    // if its a string
-    return { type: "string", value: token.slice(1, token.length - 1) };
-  else if (token in operators) return { type: "operator", value: token };
-  else return { type: "id", value: token };
-};
-
-const parse = (tokens, ast = []) => {
-  const curTok = tokens.shift();
-  if (curTok === undefined) return ast.pop();
-  // ends with extra array
-  else if (curTok === "(") {
-    ast.push(parse(tokens, []));
-    return parse(tokens, ast); // new subtree
-  } else if (curTok === ")") return ast;
-  // end subtree
-  // must be and id or value
-  else return parse(tokens, ast.concat(makeNode(curTok)));
-};
-
-const funcs = {
-  print: (x) => console.log(x),
-  clear: (_) => console.clear(),
-  read: (_) => prompt(""),
-  head: (x) => x[0],
-  tail: (x) => x.slice(1),
-  range: (x) => [...Array(x[1] - x[0]).keys()].map((t) => t + x[0]),
-  push: (x) => x[1].push(x[0]),
-  copy: (x) => x,
-  pop: (x) => x.pop(),
-  rm: (x) => x.slice(0, -1),
-  eval: (x) => interpret(parse(tokenize(x))),
-  inject: (x) => eval(x),
-};
-
 const operators = {
+  // TODO: what is `op = ` doing for you in all of these? op isn't defined?
   "+": (op = (x) => x.reduce((a, b) => a + b)),
   "-": (op = (x) => x.reduce((a, b) => a - b)),
   "*": (op = (x) => x.reduce((a, b) => a * b)),
@@ -99,6 +68,48 @@ const operators = {
   "~": (op = (x) => !x.every((val, i, arr) => val === arr[0])),
 };
 
+const makeNode = (token) => {
+  if (!isNaN(parseFloat(token)))
+    // if its a number
+    return { type: "number", value: parseFloat(token) };
+  else if (token[0] === '"')
+    // TODO: I don't think a quote should be a token, the whole string should be a token.
+    // if its a string
+    return { type: "string", value: token.slice(1, token.length - 1) };
+  // TODO: operators was used before it was defined.
+  else if (token in operators) return { type: "operator", value: token };
+  else return { type: "id", value: token };
+};
+
+const parse = (tokens, ast = []) => {
+  const curTok = tokens.shift(); // TODO: this mutates an argument. But I freely admit, it's much harder to write this function without mutating arguments.
+  if (curTok === undefined) return ast.pop();
+  // ends with extra array
+  else if (curTok === "(") {
+    ast.push(parse(tokens, []));
+    return parse(tokens, ast); // new subtree
+  } else if (curTok === ")") return ast;
+  // end subtree
+  // must be and id or value
+  // TODO: what if it's not an id or value?
+  else return parse(tokens, ast.concat(makeNode(curTok))); // TODO: concat is so 2019. Use array spreading :)
+};
+
+const funcs = {
+  print: (x) => console.log(x),
+  clear: () => console.clear(),
+  read: () => prompt(""),
+  head: (x) => x[0],
+  tail: (x) => x.slice(1),
+  range: (x) => [...Array(x[1] - x[0]).keys()].map((t) => t + x[0]),
+  push: (x) => x[1].push(x[0]),
+  copy: (x) => x,
+  pop: (x) => x.pop(),
+  rm: (x) => x.slice(0, -1),
+  eval: (x) => interpret(parse(tokenize(x))),
+  inject: (x) => eval(x),
+};
+
 const controlFlow = {
   if: (input, ctx) =>
     interpret(input[1], ctx)
@@ -110,15 +121,12 @@ const controlFlow = {
     return interpret(input[2], ctx);
   },
 
-  expr: (input, ctx) => {
-    return (x) => {
-      x = Object.values(Object(x)); //for some reason x is passed an object array??
-      const exprCtx = ctx;
-      for (let i = 0; i < input[1].length; ++i)
-        exprCtx[input[1][i].value] = x[i];
+  expr: (input, ctx) => (x) => {
+    x = Object.values(Object(x)); //for some reason x is passed an object array??
+    const exprCtx = ctx;
+    for (let i = 0; i < input[1].length; ++i) exprCtx[input[1][i].value] = x[i];
 
-      return interpret([input[2]], exprCtx);
-    };
+    return interpret([input[2]], exprCtx);
   },
 
   import: (input, ctx) => {
