@@ -4,8 +4,7 @@
   "description": "A simple lisp type interpreter",
   "main": "lisp.js",
   "scripts": {
-    "test": "jest",
-    "keepTesting": "nodemon tests/runTests.js",
+    "test": "jest --watch",
     "lint": "eslint . --fix"
   },
   "author": "Joshua Maxwell",
