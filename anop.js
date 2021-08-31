@@ -1,8 +1,5 @@
-// TODO: can you use import instead? You'd need to add "type": "module" to your package.json, and be using a recent version of Node
 const { exit } = require("process");
-
 const prompt = require("prompt-sync")();
-
 const fs = require("fs");
 
 // TODO: Does this need to be here? This seems like something specific to a certain utility function. This should go into a separate file and that file should export a function that lets you log things in different colors.
@@ -30,6 +27,7 @@ const colorize = {
  */
 const tokenize = (text) =>
   `( ${text} )`
+    // TODO: you should absolutely have tests for this function. Something that says "tokenize(input) had better always equal X"
     // TODO: I suspect you could do 95% of this function with a single regex
     // TODO: I think a string should be a single token, you could do that with a regex
     // TODO: the backslash before the ; is not needed
@@ -191,6 +189,7 @@ const debug = (input) => {
   console.log(parse(tokenize(input)));
 };
 
+// TODO: move this to a different file. Separate your logic from your I/O.
 const main = () => {
   // gather the data
   const flags = process.argv[2][0] === "-" ? process.argv[2] : "";
@@ -214,4 +213,9 @@ const main = () => {
   if (flags.includes("c")) main();
 };
 
-main();
+// main();
+
+module.exports.tokenize = tokenize;
+module.exports.parse = parse;
+module.exports.interpret = interpret;
+module.exports.anop = (str) => interpret(parse(tokenize(str)));
