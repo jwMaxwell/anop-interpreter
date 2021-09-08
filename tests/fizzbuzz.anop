@@ -1,25 +1,26 @@
+;; Joshua Maxwell
+;; This test program performs FizzBuzz
 (
-  (import "tests/test1.anop")
   (var fizzbuzz (expr (x) 
   (
-    if (& (% head(x) 3) (% head(x) 5)) 
-      "fizzbuzz" 
-      x
-    )
-  ))
+    if (% x 5)
+      (if (% x 3)
+        x
+        "Fizz")
+      (if (% x 3)
+        "Buzz"
+        "FizzBuzz")
+  )))
  
   (var loop (expr (x) 
   (   
-    (var y (head (x)))
-    (var z (tail (x)))
-    (if x
-      (
-        (print (fizzbuzz (y))) 
-        (loop tail(x))
-      ) 
-      (print (fizzbuzz (y)))
+    (print (head (fizzbuzz (x)))) ;; head removes outer array
+    (var y (+ x 1)) ;; easier to work with
+    (if (< y 100) 
+      (loop (y)) 
+      () ;; good practice
     )
   )))
 
-  (loop (range (1 100)))
+  (loop (1))
 )

@@ -1,8 +1,8 @@
 {
-  "name": "lisp",
+  "name": "anop",
   "version": "1.0.0",
-  "description": "A simple lisp type interpreter",
-  "main": "lisp.js",
+  "description": "An interpreter for the anop programming language",
+  "main": "anop.js",
   "scripts": {
     "test": "jest --watch",
     "lint": "eslint . --fix"

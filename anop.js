@@ -5,19 +5,6 @@ const fs = require("fs");
 // TODO: Does this need to be here? This seems like something specific to a certain utility function. This should go into a separate file and that file should export a function that lets you log things in different colors.
 // e.g. `export const print = (color, msg) => {...}`
 const colorize = {
-  reset: (x) => "\x1b[0m" + x,
-  bright: (x) => "\x1b[1m" + x + "\x1b[0m",
-  dim: (x) => "\x1b[2m" + x + "\x1b[0m",
-  underline: (x) => "\x1b[4m" + x + "\x1b[0m",
-  blink: (x) => "\x1b[5m" + x + "\x1b[0m",
-  fgBlack: (x) => "\x1b[30m" + x + "\x1b[0m",
-  fgRed: (x) => "\x1b[31m" + x + "\x1b[0m",
-  fgGreen: (x) => "\x1b[32m" + x + "\x1b[0m",
-  fgYellow: (x) => "\x1b[33m" + x + "\x1b[0m",
-  fgBlue: (x) => "\x1b[34m" + x + "\x1b[0m",
-  fgMagenta: (x) => "\x1b[35m" + x + "\x1b[0m",
-  fgCyan: (x) => "\x1b[36m" + x + "\x1b[0m",
-  fgWhite: (x) => "\x1b[37m" + x + "\x1b[0m",
   error: (x) => "\x1b[1m\x1b[31m" + x + "\x1b[0m",
 };
 
@@ -50,6 +37,8 @@ const operators = {
   "/": (x) => x.reduce((a, b) => a / b),
   "%": (x) => x.reduce((a, b) => a % b),
   "^": (x) => x.reduce((a, b) => a ** b),
+  "++": (x) => x.map((t) => ++t),
+  "--": (x) => x.map((t) => --t),
   "|": (x) => x.some((t) => t),
   "&": (x) => x.every((t) => t),
   ">": (x) =>
@@ -63,14 +52,13 @@ const operators = {
   "<=": (x) => x.every((val, i) => val === x.sort((a, b) => a - b)[i]),
   "=": (x) => x.every((val, i, arr) => val === arr[0]),
   "~": (x) => !x.every((val, i, arr) => val === arr[0]),
+  ".": (x) => x.flat(),
 };
 
 const makeNode = (token) => {
   if (!isNaN(parseFloat(token)))
-    // if its a number
     return { type: "number", value: parseFloat(token) };
   else if (token[0] === '"')
-    // if its a string
     return { type: "string", value: token.slice(1, token.length - 1) };
   else if (token in operators) return { type: "operator", value: token };
   else return { type: "id", value: token };
@@ -79,21 +67,20 @@ const makeNode = (token) => {
 const parse = (tokens, ast = []) => {
   const curTok = tokens.shift(); // TODO: this mutates an argument. But I freely admit, it's much harder to write this function without mutating arguments.
   if (curTok === undefined) return ast.pop();
-  // ends with extra array
   else if (curTok === "(") {
     ast.push(parse(tokens, []));
     return parse(tokens, ast); // new subtree
   } else if (curTok === ")") return ast;
-  // end subtree
-  // must be and id or value
   // TODO: what if it's not an id or value?
-  else return parse(tokens, [...ast, makeNode(curTok)]); // TODO: concat is so 2019. Use array spreading :)
+  else return parse(tokens, [...ast, makeNode(curTok)]);
 };
 
 const funcs = {
   print: (x) => console.log(x),
   clear: () => console.clear(),
   read: () => prompt(""),
+  fread: (x) => fs.readFileSync(x[0], { encoding: "utf8", flag: "r" }),
+  fwrite: (x) => fs.writeFileSync(x[0], x[1]),
   head: (x) => x[0],
   tail: (x) => x.slice(1),
   range: (x) => [...Array(x[1] - x[0]).keys()].map((t) => t + x[0]),
@@ -213,7 +200,7 @@ const main = () => {
   if (flags.includes("c")) main();
 };
 
-// main();
+main();
 
 module.exports.tokenize = tokenize;
 module.exports.parse = parse;
