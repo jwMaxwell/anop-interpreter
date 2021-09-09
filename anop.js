@@ -18,7 +18,8 @@ const tokenize = (text) =>
     // TODO: I suspect you could do 95% of this function with a single regex
     // TODO: I think a string should be a single token, you could do that with a regex
     // TODO: the backslash before the ; is not needed
-    .replaceAll(/^[\s]*;.*\n?/gm, "")
+    //.replaceAll(/^[\s]*;.*\n?/gm, "")
+      .replaceAll(/;(.*?)\n/g, "")
     .split('"')
     .map((val, i) =>
       i % 2 === 0
@@ -65,29 +66,28 @@ const makeNode = (token) => {
 };
 
 const parse = (tokens, ast = []) => {
-  const curTok = tokens.shift(); // TODO: this mutates an argument. But I freely admit, it's much harder to write this function without mutating arguments.
+  let temp = tokens;
+  const curTok = temp.shift();
   if (curTok === undefined) return ast.pop();
   else if (curTok === "(") {
-    ast.push(parse(tokens, []));
-    return parse(tokens, ast); // new subtree
+    ast.push(parse(temp, []));
+    return parse(temp, ast); // new subtree
   } else if (curTok === ")") return ast;
-  // TODO: what if it's not an id or value?
-  else return parse(tokens, [...ast, makeNode(curTok)]);
+  else return parse(temp, [...ast, makeNode(curTok)]);
 };
 
 const funcs = {
   print: (x) => console.log(x),
   clear: () => console.clear(),
   read: () => prompt(""),
-  fread: (x) => fs.readFileSync(x[0], { encoding: "utf8", flag: "r" }),
-  fwrite: (x) => fs.writeFileSync(x[0], x[1]),
+  readf: (x) => fs.readFileSync(x[0], { encoding: "utf8", flag: "r" }),
+  printf: (x) => fs.writeFileSync(x[0], x[1]),
   head: (x) => x[0],
   tail: (x) => x.slice(1),
   range: (x) => [...Array(x[1] - x[0]).keys()].map((t) => t + x[0]),
-  push: (x) => x[1].push(x[0]),
+  push: (x) => [...x[1], x[0]],
   copy: (x) => x,
-  pop: (x) => x.pop(),
-  rm: (x) => x.slice(0, -1),
+  pop: (x) => x.slice(0, -1),
   eval: (x) => interpret(parse(tokenize(x))),
   inject: (x) => eval(x),
 };

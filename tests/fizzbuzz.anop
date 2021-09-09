@@ -1,9 +1,9 @@
-;; Joshua Maxwell
-;; This test program performs FizzBuzz
+;; This is a test of the commenting
+;; This is the second test of the commenting
 (
   (var fizzbuzz (expr (x) 
   (
-    if (% x 5)
+    if (% x 5) ;; this is the third test
       (if (% x 3)
         x
         "Fizz")
@@ -14,11 +14,11 @@
  
   (var loop (expr (x) 
   (   
-    (print (head (fizzbuzz (x)))) ;; head removes outer array
-    (var y (+ x 1)) ;; easier to work with
+    (print (head (fizzbuzz (x))))
+    (var y (+ x 1))
     (if (< y 100) 
       (loop (y)) 
-      () ;; good practice
+      () 
     )
   )))
 
