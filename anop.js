@@ -84,10 +84,10 @@ const funcs = {
   printf: (x) => fs.writeFileSync(x[0], x[1]),
   head: (x) => x[0],
   tail: (x) => x.slice(1),
-  range: (x) => [...Array(x[1] - x[0]).keys()].map((t) => t + x[0]),
+  length: (x) => x.length,
+  get: (x) => x[1][x[0]],
   push: (x) => [...x[1], x[0]],
-  copy: (x) => x,
-  pop: (x) => x.slice(0, -1),
+  pop: (x) => x.slice(0, x.length - 1),
   eval: (x) => interpret(parse(tokenize(x))),
   inject: (x) => eval(x),
 };
