@@ -1,3 +1,11 @@
+"use strict";
+
+/**
+ * The problem in the code is most likely related to the parser
+ * Check out the parser and see what happens when a function`
+ * is plopped into an array. This will likely solve the puzzle
+ */
+
 const { exit } = require("process");
 const prompt = require("prompt-sync")();
 const fs = require("fs");
