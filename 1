@@ -1,0 +1,17 @@
+;; const pipe = (...funcs) => (input) => 
+;;   funcs.reduce((val, func) => func(val), input)
+
+(var reduce (expr (arr func) (
+  (print (- (length (arr)) 2))
+  (if (<  (length arr) 2)
+    (print "err")
+    (reduce (push 
+              (func ((tail (arr)) (get (- (length (arr)) 2) arr)))
+              ((tail (tail (arr))) (print arr))
+            ) func))
+)))
+
+;; test
+(var array (1 2 3 4 5))
+(var function (expr (a b) (+ a b))) 
+(print (reduce (array function)))

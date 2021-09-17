@@ -1,19 +1,23 @@
 ;; const pipe = (...funcs) => (input) => 
 ;;   funcs.reduce((val, func) => func(val), input)
 
-(var pipe (expr (x) (
+(var push_back (expr (val arr) (
+  
+)))
 
-
-
+(var last (expr (arr) (
+  get ((- (length arr) 1) arr)
 )))
 
 (var reduce (expr (arr func) (
-  if (<  (length arr) 2)
-    (print "err")
-    (reduce (push 
-              (func ((tail (arr)) (get (- (length (arr)) 2) arr)))
-              ((tail (tail (arr))) (print arr))
-            ) func)
+;;  (print (head (last (arr))))
+  (print arr)
+  (if (<  (length arr) 2)
+    (print arr)
+    (reduce (push (
+              (func ((head (arr)) (get (1 arr))))
+              (tail (tail arr))
+            )) func))
 )))
 
 ;; test

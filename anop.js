@@ -150,9 +150,9 @@ const interpret = (input = [], ctx = { scope: {}, parent: funcs }) => {
         input[0] instanceof Function &&
         Object.values(operators).includes(input[0])
       )
-        return input[0].apply(null, [input.slice(1)]);
+        return input.slice(1).length ? input[0].apply(null, [input.slice(1)]) : input[0];
       else if (input[0] instanceof Function)
-        return input[0].apply(null, input.slice(1));
+        return input.slice(1).length ? input[0].apply(null, input.slice(1)) : input[0];
       else return input;
     }
   } else if (input.type === "id") return identify(input.value, ctx);
