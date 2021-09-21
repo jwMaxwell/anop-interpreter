@@ -1,26 +1,32 @@
+;; Joshua Maxwell
+;; Standard Library (stdlib) holds all of the functions that user`s
+;; will likely need in most/all of their programs
+;;
 ;; const pipe = (...funcs) => (input) => 
 ;;   funcs.reduce((val, func) => func(val), input)
 
-(var push_back (expr (val arr) (
-  
-)))
-
-(var last (expr (arr) (
-  get ((- (length arr) 1) arr)
-)))
+;(var last (expr (arr) (
+;  get ((- (length arr) 1) arr)
+;)))
 
 (var reduce (expr (arr func) (
-;;  (print (head (last (arr))))
-  (print arr)
-  (if (<  (length arr) 2)
-    (print arr)
-    (reduce (push (
-              (func ((head (arr)) (get (1 arr))))
-              (tail (tail arr))
-            )) func))
+  ;(print arr)
+  (var temp (
+    (push_back (
+      (head (func ((head arr) (get (1 arr)))))
+      (tail (tail arr))
+    ))
+  ))
+    
+  (if (= 2 (length arr))
+    (func ((head arr)(get (1 arr))))
+    (reduce ((head temp) func))
+  )
 )))
 
 ;; test
 (var array (1 2 3 4 5))
 (var function (expr (a b) (+ a b))) 
+
+;;(reduce (array function))
 (print (reduce (array function)))

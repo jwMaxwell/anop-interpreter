@@ -91,10 +91,11 @@ const funcs = {
   readf: (x) => fs.readFileSync(x[0], { encoding: "utf8", flag: "r" }),
   printf: (x) => fs.writeFileSync(x[0], x[1]),
   head: (x) => x[0],
-  tail: (x) => x.slice(1),
-  length: (x) => x.length,
+  tail: (x) => {console.log(x); return x.slice(1);}, //FIXME,
+  length: (x) => x === undefined ? 0 : x.length,
   get: (x) => x[1][x[0]],
   push: (x) => [...x[1], x[0]],
+  push_back: (x) => [x[0], ...x[1]],
   pop: (x) => x.slice(0, x.length - 1),
   eval: (x) => interpret(parse(tokenize(x))),
   inject: (x) => eval(x),
@@ -115,7 +116,14 @@ const controlFlow = {
     x = Object.values(Object(x)); //for some reason x is passed an object array??
     const exprCtx = ctx;
     for (let i = 0; i < input[1].length; ++i) exprCtx[input[1][i].value] = x[i];
+    //console.log(exprCtx); //FIXME
+    return interpret([input[2]], exprCtx);
+  },
 
+  "->": (input, ctx) => (x) => {
+    x = Object.values(Object(x)); //for some reason x is passed an object array??
+    const exprCtx = ctx;
+    for (let i = 0; i < input[1].length; ++i) exprCtx[input[1][i].value] = x[i];
     return interpret([input[2]], exprCtx);
   },
 
@@ -141,6 +149,7 @@ const identify = (id, ctx) => {
 };
 
 const interpret = (input = [], ctx = { scope: {}, parent: funcs }) => {
+  //console.log(ctx); //FIXME
   if (Array.isArray(input)) {
     if (input.length > 0 && input[0].value in controlFlow)
       return controlFlow[input[0].value](input, ctx);
